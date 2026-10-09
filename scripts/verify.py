@@ -58,10 +58,11 @@ def check_dpo(problems: list[str], warnings: list[str]) -> None:
         return
     base = str((read_json(adapter / "adapter_config.json", problems) or {}).get("base_model_name_or_path", ""))
     expected = (REPO / "models" / "sft-merged").resolve()
-    if not base or Path(base).resolve() != expected:
+    colab_expected = "/content/lab22/models/sft-merged"
+    if not base or (Path(base).resolve() != expected and base != colab_expected):
         problems.append(
-            f"WRONG REF  adapters/dpo was trained on {base!r}, not {rel(expected)}: the DPO reference "
-            "must be this repo's SFT model (if the repo moved, rerun NB3 here)."
+            f"WRONG REF  adapters/dpo was trained on {base!r}, not {rel(expected)} or "
+            f"{colab_expected}: the DPO reference must be this lab's SFT model."
         )
     sys.path.insert(0, str(REPO))
     from lab22.data import split_mismatch
@@ -223,4 +224,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # Keep diagnostics readable on Windows consoles whose code page cannot encode
+    # symbols used in the optional-status section (for example, beta and checkmarks).
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="backslashreplace")
     sys.exit(main())

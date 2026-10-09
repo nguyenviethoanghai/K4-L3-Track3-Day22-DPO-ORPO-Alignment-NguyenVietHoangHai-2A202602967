@@ -59,8 +59,8 @@ print(f"sum log p = {total.item():.3f}   mean log p = {mean.item():.3f}")
 # %%
 def my_dpo_loss(pc, pr, rc, rr, beta=0.1):
     """pc/pr: policy log-prob chosen/rejected; rc/rr: reference. Trả về loss trung bình."""
-    # TODO: viết bằng torch.nn.functional.logsigmoid
-    return None
+    margin = beta * ((pc - rc) - (pr - rr))
+    return -torch.nn.functional.logsigmoid(margin).mean()
 
 
 # %%
@@ -73,6 +73,12 @@ if mine is None:
 else:
     assert torch.allclose(torch.as_tensor(mine), ref_loss, atol=1e-6), (mine, ref_loss)
     print(f"✓ Khớp tham chiếu: {ref_loss.item():.4f}")
+
+# %% [markdown]
+# **Trả lời:** Margin có thể tăng trong khi xác suất (log-xác suất) của `chosen`
+# giảm nếu `rejected` giảm nhanh hơn. DPO tối ưu chênh lệch tương đối giữa hai
+# câu trả lời so với mô hình tham chiếu; bản thân margin không đảm bảo xác suất
+# tuyệt đối của `chosen` tăng. Đây là likelihood displacement.
 
 # %% [markdown]
 # ## 3. Bước 0: mô hình đang học (policy) = reference ⇒ loss = log 2
